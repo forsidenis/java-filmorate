@@ -13,18 +13,18 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FilmBoundaryTests {
+public class FilmBoundaryTests {
     private Validator validator;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
     }
 
     @Test
-    void shouldValidateFilmWithExact200CharDescription() {
+    public void shouldValidateFilmWithExact200CharDescription() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("A".repeat(200)); // Ровно 200 символов
@@ -36,7 +36,7 @@ class FilmBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateFilmWith201CharDescription() {
+    public void shouldNotValidateFilmWith201CharDescription() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("A".repeat(201)); // 201 символ - слишком много
@@ -48,7 +48,7 @@ class FilmBoundaryTests {
     }
 
     @Test
-    void shouldValidateFilmWithCinemaBirthday() {
+    public void shouldValidateFilmWithCinemaBirthday() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -60,7 +60,7 @@ class FilmBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateFilmBeforeCinemaBirthday() {
+    public void shouldNotValidateFilmBeforeCinemaBirthday() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -79,7 +79,7 @@ class FilmBoundaryTests {
     }
 
     @Test
-    void shouldValidateFilmWithDuration1() {
+    public void shouldValidateFilmWithDuration1() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -91,7 +91,7 @@ class FilmBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateFilmWithZeroDuration() {
+    public void shouldNotValidateFilmWithZeroDuration() {
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");

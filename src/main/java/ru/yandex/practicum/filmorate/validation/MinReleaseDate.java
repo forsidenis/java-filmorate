@@ -18,4 +18,3 @@ public @interface MinReleaseDate {
 
     String value() default "1895-12-28";
 }
-
