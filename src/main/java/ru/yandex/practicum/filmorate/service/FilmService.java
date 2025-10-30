@@ -38,13 +38,11 @@ public class FilmService {
     }
 
     public void addLike(Integer filmId, Integer userId) {
-        // Проверяем существование пользователя
         userService.findById(userId);
         filmStorage.addLike(filmId, userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
-        // Проверяем существование пользователя
         userService.findById(userId);
         filmStorage.removeLike(filmId, userId);
     }
