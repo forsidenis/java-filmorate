@@ -38,10 +38,8 @@ public class ErrorHandler {
                 .findFirst()
                 .orElse("Ошибка валидации");
 
-        return Map.of(
-                "error", "Ошибка валидации",
-                "errorMessage", errorMessage
-        );
+        log.warn("Ошибка валидации данных: {}", errorMessage);
+        return Map.of("error", "Ошибка валидации", "errorMessage", errorMessage);
     }
 
     @ExceptionHandler
