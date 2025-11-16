@@ -15,20 +15,24 @@ public class TestController {
     private final JdbcTemplate jdbcTemplate;
 
     @PostMapping("/reset")
-    public void resetDatabase() {
-        log.info("Resetting database...");
+    public String resetDatabase() {
+        log.info("=== RESETTING DATABASE ===");
 
-        // Очищаем в правильном порядке (с учетом внешних ключей)
-        jdbcTemplate.update("DELETE FROM film_likes");
-        jdbcTemplate.update("DELETE FROM film_genres");
-        jdbcTemplate.update("DELETE FROM friendships");
-        jdbcTemplate.update("DELETE FROM films");
-        jdbcTemplate.update("DELETE FROM users");
+        try {
+            jdbcTemplate.update("DELETE FROM film_likes");
+            jdbcTemplate.update("DELETE FROM film_genres");
+            jdbcTemplate.update("DELETE FROM friendships");
+            jdbcTemplate.update("DELETE FROM films");
+            jdbcTemplate.update("DELETE FROM users");
 
-        // Сбрасываем автоинкременты
-        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
-        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+            jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
 
-        log.info("Database reset completed");
+            log.info("=== DATABASE RESET COMPLETE ===");
+            return "Database reset successfully";
+        } catch (Exception e) {
+            log.error("Error resetting database: {}", e.getMessage());
+            return "Error: " + e.getMessage();
+        }
     }
 }
