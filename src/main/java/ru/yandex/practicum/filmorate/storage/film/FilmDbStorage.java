@@ -144,11 +144,25 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", film.getId());
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            // Убираем дубликаты по ID жанра
+            Set<Genre> uniqueGenres = film.getGenres().stream()
+                    .collect(Collectors.toMap(
+                            Genre::getId,
+                            genre -> genre,
+                            (existing, replacement) -> existing
+                    ))
+                    .values()
+                    .stream()
+                    .collect(Collectors.toSet());
+
             String insertSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-            List<Object[]> batchArgs = film.getGenres().stream()
+            List<Object[]> batchArgs = uniqueGenres.stream()
                     .map(genre -> new Object[]{film.getId(), genre.getId()})
                     .collect(Collectors.toList());
             jdbcTemplate.batchUpdate(insertSql, batchArgs);
+
+            // Обновляем объект фильма уникальными жанрами
+            film.setGenres(uniqueGenres);
         }
     }
 

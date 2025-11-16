@@ -32,18 +32,32 @@ public class FilmControllerIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Очищаем базу перед каждым тестом
+        // Сначала вызываем reset endpoint для полного сброса
+        try {
+            mockMvc.perform(post("/test/reset"));
+        } catch (Exception e) {
+            // Если endpoint недоступен, делаем сброс вручную
+            manualReset();
+        }
+    }
+
+    private void manualReset() {
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+
         jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM film_genres");
         jdbcTemplate.update("DELETE FROM friendships");
         jdbcTemplate.update("DELETE FROM films");
         jdbcTemplate.update("DELETE FROM users");
-        jdbcTemplate.update("DELETE FROM mpa_ratings");
-        jdbcTemplate.update("DELETE FROM genres");
 
-        // Инициализируем базовые данные MPA и жанры
-        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (1, 'G')");
-        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (1, 'Комедия')");
+        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+
+        // Инициализируем MPA если нужно
+        jdbcTemplate.update("MERGE INTO mpa_ratings (id, name) VALUES (1, 'G')");
+        jdbcTemplate.update("MERGE INTO genres (id, name) VALUES (1, 'Комедия')");
     }
 
     @Test

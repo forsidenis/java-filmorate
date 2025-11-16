@@ -34,12 +34,23 @@ public class UserControllerIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Очищаем базу перед каждым тестом
-        jdbcTemplate.update("DELETE FROM film_likes");
-        jdbcTemplate.update("DELETE FROM film_genres");
+        try {
+            mockMvc.perform(post("/test/reset"));
+        } catch (Exception e) {
+            manualReset();
+        }
+    }
+
+    private void manualReset() {
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+
         jdbcTemplate.update("DELETE FROM friendships");
-        jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM users");
+
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
     }
 
     private String getUniqueEmail() {
