@@ -1,15 +1,18 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -24,11 +27,34 @@ public class UserControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final AtomicInteger counter = new AtomicInteger(0);
+
+    @BeforeEach
+    public void setUp() {
+        // Очищаем базу перед каждым тестом
+        jdbcTemplate.update("DELETE FROM film_likes");
+        jdbcTemplate.update("DELETE FROM film_genres");
+        jdbcTemplate.update("DELETE FROM friendships");
+        jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM users");
+    }
+
+    private String getUniqueEmail() {
+        return "test" + counter.incrementAndGet() + "@mail.ru";
+    }
+
+    private String getUniqueLogin() {
+        return "testlogin" + counter.incrementAndGet();
+    }
+
     @Test
     public void shouldCreateValidUser() throws Exception {
         User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("testlogin");
+        user.setEmail(getUniqueEmail());
+        user.setLogin(getUniqueLogin());
         user.setBirthday(LocalDate.of(2000, 1, 1));
 
         mockMvc.perform(post("/users")
@@ -36,15 +62,15 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.login").value("testlogin"))
-                .andExpect(jsonPath("$.name").value("testlogin")); // Должен использовать логин как имя
+                .andExpect(jsonPath("$.login").value(user.getLogin()))
+                .andExpect(jsonPath("$.name").value(user.getLogin())); // Должен использовать логин как имя
     }
 
     @Test
     public void shouldCreateUserWithName() throws Exception {
         User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("testlogin");
+        user.setEmail(getUniqueEmail());
+        user.setLogin(getUniqueLogin());
         user.setName("Тестовое Имя");
         user.setBirthday(LocalDate.of(2000, 1, 1));
 
@@ -71,7 +97,7 @@ public class UserControllerIntegrationTest {
     @Test
     public void shouldReturnBadRequestForLoginWithSpaces() throws Exception {
         User user = new User();
-        user.setEmail("test@mail.ru");
+        user.setEmail(getUniqueEmail());
         user.setLogin("login with spaces"); // Логин с пробелами
         user.setBirthday(LocalDate.of(2000, 1, 1));
 

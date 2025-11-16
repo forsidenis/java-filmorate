@@ -26,6 +26,5 @@ public class User {
     @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
-    // Поле для хранения друзей
     private Set<Integer> friends = new HashSet<>();
 }

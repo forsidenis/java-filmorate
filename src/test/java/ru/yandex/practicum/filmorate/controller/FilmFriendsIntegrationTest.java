@@ -1,16 +1,20 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,11 +29,40 @@ public class FilmFriendsIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final AtomicInteger counter = new AtomicInteger(0);
+
+    @BeforeEach
+    public void setUp() {
+        // Очищаем базу перед каждым тестом
+        jdbcTemplate.update("DELETE FROM film_likes");
+        jdbcTemplate.update("DELETE FROM film_genres");
+        jdbcTemplate.update("DELETE FROM friendships");
+        jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("DELETE FROM mpa_ratings");
+        jdbcTemplate.update("DELETE FROM genres");
+
+        // Инициализируем базовые данные MPA и жанры
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (1, 'G')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (1, 'Комедия')");
+    }
+
+    private String getUniqueEmail() {
+        return "test" + counter.incrementAndGet() + "@mail.ru";
+    }
+
+    private String getUniqueLogin() {
+        return "testlogin" + counter.incrementAndGet();
+    }
+
     @Test
     public void shouldAddAndRemoveFriends() throws Exception {
         // Создаем двух пользователей
-        User user1 = createUser("user1@mail.ru", "user1");
-        User user2 = createUser("user2@mail.ru", "user2");
+        User user1 = createUser(getUniqueEmail(), getUniqueLogin());
+        User user2 = createUser(getUniqueEmail(), getUniqueLogin());
 
         Integer user1Id = user1.getId();
         Integer user2Id = user2.getId();
@@ -58,7 +91,7 @@ public class FilmFriendsIntegrationTest {
     public void shouldHandleLikes() throws Exception {
         // Создаем фильм и пользователя
         Film film = createFilm("Test Film", "Description");
-        User user = createUser("test@mail.ru", "testuser");
+        User user = createUser(getUniqueEmail(), getUniqueLogin());
 
         Integer filmId = film.getId();
         Integer userId = user.getId();
@@ -99,6 +132,7 @@ public class FilmFriendsIntegrationTest {
         film.setDescription(description);
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
+        film.setMpa(new Mpa(1, "G"));
 
         String response = mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)

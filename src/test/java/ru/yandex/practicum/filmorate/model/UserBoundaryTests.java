@@ -12,18 +12,18 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class UserBoundaryTests {
+public class UserBoundaryTests {
     private Validator validator;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
     }
 
     @Test
-    void shouldValidateUserWithTodayBirthday() {
+    public void shouldValidateUserWithTodayBirthday() {
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("testlogin");
@@ -34,7 +34,7 @@ class UserBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateUserWithTomorrowBirthday() {
+    public void shouldNotValidateUserWithTomorrowBirthday() {
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("testlogin");
@@ -45,7 +45,7 @@ class UserBoundaryTests {
     }
 
     @Test
-    void shouldValidateUserWithValidEmailFormat() {
+    public void shouldValidateUserWithValidEmailFormat() {
         User user = new User();
         user.setEmail("test.user+tag@example.co.uk"); // Сложный валидный email
         user.setLogin("testlogin");
@@ -56,7 +56,7 @@ class UserBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateUserWithEmailWithoutAt() {
+    public void shouldNotValidateUserWithEmailWithoutAt() {
         User user = new User();
         user.setEmail("invalid-email"); // Email без @
         user.setLogin("testlogin");
@@ -67,7 +67,7 @@ class UserBoundaryTests {
     }
 
     @Test
-    void shouldValidateUserWithComplexLogin() {
+    public void shouldValidateUserWithComplexLogin() {
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("user_123-login"); // Логин с подчеркиваниями и дефисами
@@ -78,7 +78,7 @@ class UserBoundaryTests {
     }
 
     @Test
-    void shouldNotValidateUserWithLoginContainingSpaces() {
+    public void shouldNotValidateUserWithLoginContainingSpaces() {
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("user login"); // Логин с пробелом

@@ -32,6 +32,8 @@ public class UserService {
 
     public User update(User user) {
         processUserName(user);
+        userStorage.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + user.getId() + " не найден"));
         return userStorage.update(user);
     }
 
