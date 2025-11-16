@@ -45,6 +45,8 @@ public class UserService {
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
+        findById(userId);
+        findById(friendId);
         userStorage.removeFriend(userId, friendId);
     }
 

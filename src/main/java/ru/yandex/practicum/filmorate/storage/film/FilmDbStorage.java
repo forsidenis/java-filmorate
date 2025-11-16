@@ -62,7 +62,7 @@ public class FilmDbStorage implements FilmStorage {
             PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             stmt.setString(1, film.getName());
             stmt.setString(2, film.getDescription());
-            stmt.setObject(3, film.getReleaseDate()); // Используем setObject вместо setDate
+            stmt.setObject(3, film.getReleaseDate());
             stmt.setInt(4, film.getDuration());
             stmt.setInt(5, film.getMpa().getId());
             return stmt;
@@ -85,7 +85,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
-                film.getReleaseDate(), // Используем напрямую LocalDate
+                film.getReleaseDate(),
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());

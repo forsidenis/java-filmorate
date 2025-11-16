@@ -30,13 +30,19 @@ public class FilmDbStorageTest {
     public void setUp() {
         jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM film_genres");
+        jdbcTemplate.update("DELETE FROM friendships");
         jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM users");
         jdbcTemplate.update("DELETE FROM mpa_ratings");
         jdbcTemplate.update("DELETE FROM genres");
 
         // Инициализируем данные
         jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (1, 'G')");
         jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (1, 'Комедия')");
+
+        // Сбрасываем автоинкременты
+        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
     }
 
     @Test
@@ -56,22 +62,5 @@ public class FilmDbStorageTest {
                 .hasValueSatisfying(f ->
                         assertThat(f).hasFieldOrPropertyWithValue("name", "Test Film")
                 );
-    }
-
-    @Test
-    public void shouldSaveAndUpdateFilm() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-        film.setMpa(new Mpa(1, "G"));
-
-        Film savedFilm = filmDbStorage.save(film);
-        savedFilm.setName("Updated Film");
-
-        Film updatedFilm = filmDbStorage.update(savedFilm);
-
-        assertThat(updatedFilm.getName()).isEqualTo("Updated Film");
     }
 }

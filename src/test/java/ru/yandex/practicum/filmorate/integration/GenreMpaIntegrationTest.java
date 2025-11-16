@@ -34,14 +34,32 @@ public class GenreMpaIntegrationTest {
 
     @BeforeEach
     public void setUp() {
+        // Очищаем все таблицы в правильном порядке (с учетом внешних ключей)
         jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM film_genres");
         jdbcTemplate.update("DELETE FROM friendships");
         jdbcTemplate.update("DELETE FROM films");
         jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("DELETE FROM genres");
+        jdbcTemplate.update("DELETE FROM mpa_ratings");
 
-        jdbcTemplate.update("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
-        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+        // Восстанавливаем базовые данные
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (1, 'G')");
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (2, 'PG')");
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (3, 'PG-13')");
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (4, 'R')");
+        jdbcTemplate.update("INSERT INTO mpa_ratings (id, name) VALUES (5, 'NC-17')");
+
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (1, 'Комедия')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (2, 'Драма')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (3, 'Мультфильм')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (4, 'Триллер')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (5, 'Документальный')");
+        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (6, 'Боевик')");
+
+        // Сбрасываем автоинкременты
+        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
     }
 
     @Test
@@ -128,7 +146,6 @@ public class GenreMpaIntegrationTest {
 
     @Test
     public void shouldReturnEmptyWhenMpaNotFound() {
-
         Optional<Mpa> mpa = mpaDao.findById(999);
 
         assertThat(mpa).isEmpty();
