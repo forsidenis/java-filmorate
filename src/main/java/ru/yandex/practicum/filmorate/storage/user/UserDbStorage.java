@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 @Repository
 @Primary
 @RequiredArgsConstructor
+@Slf4j
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
 
@@ -101,7 +104,9 @@ public class UserDbStorage implements UserStorage {
         String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         try {
             jdbcTemplate.update(sql, userId, friendId);
-        } catch (Exception e) {
+            log.debug("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
+        } catch (DataIntegrityViolationException e) {
+            log.debug("Дружба между пользователями {} и {} уже существует", userId, friendId);
         }
     }
 
