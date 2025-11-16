@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
     private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
 
     public List<Film> findAll() {
         return filmStorage.findAll();
@@ -32,12 +34,14 @@ public class FilmService {
     public Film create(Film film) {
         validateFilm(film);
         validateMpa(film.getMpa().getId());
+        validateGenres(film);
         return filmStorage.save(film);
     }
 
     public Film update(Film film) {
         validateFilm(film);
         validateMpa(film.getMpa().getId());
+        validateGenres(film);
         filmStorage.findById(film.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с ID " + film.getId() + " не найден"));
         return filmStorage.update(film);
@@ -68,6 +72,15 @@ public class FilmService {
         if (mpaId != null) {
             mpaStorage.findById(mpaId)
                     .orElseThrow(() -> new NotFoundException("MPA с ID " + mpaId + " не найден"));
+        }
+    }
+
+    private void validateGenres(Film film) {
+        if (film.getGenres() != null) {
+            for (var genre : film.getGenres()) {
+                genreStorage.findById(genre.getId())
+                        .orElseThrow(() -> new NotFoundException("Жанр с ID " + genre.getId() + " не найден"));
+            }
         }
     }
 }
