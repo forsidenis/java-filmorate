@@ -110,12 +110,9 @@ public class UserDbStorage implements UserStorage {
         }
     }
 
-    @Override
     public void removeFriend(Integer userId, Integer friendId) {
         String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
-        // Логируем для отладки, но не бросаем исключение
-        log.debug("Запрос на удаление дружбы между пользователями {} и {}", userId, friendId);
     }
 
     @Override
