@@ -134,7 +134,7 @@ public class FilmDbStorage implements FilmStorage {
                 "JOIN mpa_ratings m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
                 "GROUP BY f.id, m.name " +
-                "ORDER BY likes_count DESC " +
+                "ORDER BY COUNT(fl.user_id) DESC " +
                 "LIMIT ?";
 
         List<Film> films = jdbcTemplate.query(sql, this::mapRowToFilm, count);
@@ -158,8 +158,13 @@ public class FilmDbStorage implements FilmStorage {
         mpa.setName(rs.getString("mpa_name"));
         film.setMpa(mpa);
 
-        // Количество лайков будет загружено отдельно
-        film.setRate(getLikesCount(film.getId()));
+        // Получаем количество лайков из того же запроса, если есть
+        try {
+            film.setRate(rs.getInt("likes_count"));
+        } catch (SQLException e) {
+            // Если колонки likes_count нет, получаем отдельным запросом
+            film.setRate(getLikesCount(film.getId()));
+        }
 
         return film;
     }
@@ -184,10 +189,11 @@ public class FilmDbStorage implements FilmStorage {
         String deleteSql = "DELETE FROM film_genres WHERE film_id = ?";
         jdbcTemplate.update(deleteSql, film.getId());
 
-        // Добавляем новые жанры (если они есть)
+        // Добавляем новые жанры (если они есть и не null)
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             // Убираем дубликаты жанров
             Set<Genre> uniqueGenres = film.getGenres().stream()
+                    .filter(genre -> genre != null && genre.getId() != null) // Добавляем проверку на null
                     .collect(Collectors.toCollection(() ->
                             new TreeSet<>(Comparator.comparing(Genre::getId))));
 

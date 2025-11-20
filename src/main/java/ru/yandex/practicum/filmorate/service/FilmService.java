@@ -96,12 +96,7 @@ public class FilmService {
             throw new ValidationException("ID рейтинга MPA не может быть пустым");
         }
 
-        // Проверяем существование MPA
-        try {
-            mpaService.getMpaById(mpa.getId());
-        } catch (NotFoundException e) {
-            throw new ValidationException("Рейтинг MPA с ID " + mpa.getId() + " не найден");
-        }
+        mpaService.getMpaById(mpa.getId());
     }
 
     private void validateGenres(List<Genre> genres) {
@@ -110,7 +105,6 @@ public class FilmService {
                 if (genre.getId() == null) {
                     throw new ValidationException("ID жанра не может быть пустым");
                 }
-                // Проверяем существование жанра
                 genreService.getGenreById(genre.getId());
             }
         }
