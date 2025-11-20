@@ -28,7 +28,8 @@ public class User {
 
     private List<Integer> friends = new ArrayList<>();
 
-    public User() {}
+    public User() {
+    }
 
     public User(Integer id, String email, String login, String name, LocalDate birthday) {
         this.id = id;
