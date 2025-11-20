@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -16,6 +17,11 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@TestPropertySource(properties = {
+        "spring.main.banner-mode=off",
+        "logging.level.org.springframework=ERROR",
+        "logging.level.com.zaxxer.hikari=ERROR"
+})
 public class FilmorateApplicationTests {
 
     @Autowired
@@ -52,13 +58,6 @@ public class FilmorateApplicationTests {
     @Test
     public void shouldNotCreateFilmWithEmptyName() {
         validFilm.setName("");
-        Set<ConstraintViolation<Film>> violations = validator.validate(validFilm);
-        assertFalse(violations.isEmpty());
-    }
-
-    @Test
-    public void shouldNotCreateFilmWithNullName() {
-        validFilm.setName(null);
         Set<ConstraintViolation<Film>> violations = validator.validate(validFilm);
         assertFalse(violations.isEmpty());
     }

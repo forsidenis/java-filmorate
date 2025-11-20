@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {"spring.main.banner-mode=off"})
 @AutoConfigureMockMvc
 public class ValidationErrorMessagesTest {
 

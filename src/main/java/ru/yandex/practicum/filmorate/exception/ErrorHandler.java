@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,15 @@ public class ErrorHandler {
 
         log.warn("Ошибка валидации данных: {}", errorMessage);
         return Map.of("error", "Ошибка валидации", "errorMessage", errorMessage);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleDataIntegrityViolationException(
+            final DataIntegrityViolationException e) {
+        log.warn("Конфликт данных: {}", e.getMessage());
+        return Map.of("error", "Конфликт данных",
+                "errorMessage", "Нарушение целостности данных. Возможно, пользователь с таким email или логином уже существует.");
     }
 
     @ExceptionHandler

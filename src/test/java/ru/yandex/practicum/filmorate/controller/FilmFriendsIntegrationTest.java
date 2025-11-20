@@ -1,22 +1,28 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.util.TestDatabaseCleaner;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {"spring.main.banner-mode=off"})
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 public class FilmFriendsIntegrationTest {
 
     @Autowired
@@ -25,11 +31,21 @@ public class FilmFriendsIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private TestDatabaseCleaner testDatabaseCleaner;
+
+    @BeforeEach
+    public void setUp() {
+        testDatabaseCleaner.cleanDatabase();
+    }
+
     @Test
     public void shouldAddAndRemoveFriends() throws Exception {
-        // Создаем двух пользователей
-        User user1 = createUser("user1@mail.ru", "user1");
-        User user2 = createUser("user2@mail.ru", "user2");
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+
+        // Создаем двух пользователей с уникальными данными
+        User user1 = createUser("user1_" + uniqueId + "@mail.ru", "user1_" + uniqueId);
+        User user2 = createUser("user2_" + uniqueId + "@mail.ru", "user2_" + uniqueId);
 
         Integer user1Id = user1.getId();
         Integer user2Id = user2.getId();
@@ -56,9 +72,11 @@ public class FilmFriendsIntegrationTest {
 
     @Test
     public void shouldHandleLikes() throws Exception {
-        // Создаем фильм и пользователя
-        Film film = createFilm("Test Film", "Description");
-        User user = createUser("test@mail.ru", "testuser");
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+
+        // Создаем фильм и пользователя с уникальными данными
+        Film film = createFilm("Test Film " + uniqueId, "Description " + uniqueId);
+        User user = createUser("test_" + uniqueId + "@mail.ru", "testuser_" + uniqueId);
 
         Integer filmId = film.getId();
         Integer userId = user.getId();
@@ -99,6 +117,11 @@ public class FilmFriendsIntegrationTest {
         film.setDescription(description);
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
+
+        // Добавляем обязательный MPA рейтинг
+        Mpa mpa = new Mpa();
+        mpa.setId(1); // G рейтинг
+        film.setMpa(mpa);
 
         String response = mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)

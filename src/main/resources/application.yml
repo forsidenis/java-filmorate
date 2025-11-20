@@ -1,0 +1,33 @@
+spring:
+  main:
+    banner-mode: off
+  sql:
+    init:
+      mode: always
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: false
+
+logging:
+  level:
+    org.springframework: ERROR
+    org.springframework.test: ERROR
+    org.springframework.boot: ERROR
+    org.springframework.boot.test: ERROR
+    org.springframework.test.context.support: ERROR
+    org.springframework.boot.test.context: ERROR
+    org.springframework.boot.autoconfigure: ERROR
+
+    com.zaxxer.hikari: ERROR
+    org.hibernate: ERROR
+    org.h2: ERROR
+
+    ru.yandex.practicum.filmorate: DEBUG
+    org.springframework.web: DEBUG
+
+    root: ERROR
