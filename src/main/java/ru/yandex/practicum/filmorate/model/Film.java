@@ -31,7 +31,8 @@ public class Film {
     private List<Genre> genres = new ArrayList<>();
     private Integer rate = 0;
 
-    public Film() {}
+    public Film() {
+    }
 
     public Film(Integer id, String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa) {
         this.id = id;
