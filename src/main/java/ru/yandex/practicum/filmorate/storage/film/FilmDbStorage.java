@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 
 import java.sql.PreparedStatement;
@@ -32,7 +32,9 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, this::mapRowToFilm);
 
         // Загружаем жанры для каждого фильма
-        films.forEach(film -> film.setGenres(genreStorage.getGenresByFilmId(film.getId())));
+        if (!films.isEmpty()) {
+            loadGenresForFilms(films);
+        }
 
         return films;
     }
@@ -140,7 +142,9 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, this::mapRowToFilm, count);
 
         // Загружаем жанры для каждого фильма
-        films.forEach(film -> film.setGenres(genreStorage.getGenresByFilmId(film.getId())));
+        if (!films.isEmpty()) {
+            loadGenresForFilms(films);
+        }
 
         return films;
     }
@@ -171,7 +175,8 @@ public class FilmDbStorage implements FilmStorage {
 
     private Integer getLikesCount(Integer filmId) {
         String sql = "SELECT COUNT(*) FROM film_likes WHERE film_id = ?";
-        return jdbcTemplate.queryForObject(sql, Integer.class, filmId);
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, filmId);
+        return count != null ? count : 0;
     }
 
     private Mpa getMpaById(Integer mpaId) {
@@ -193,7 +198,7 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             // Убираем дубликаты жанров
             Set<Genre> uniqueGenres = film.getGenres().stream()
-                    .filter(genre -> genre != null && genre.getId() != null) // Добавляем проверку на null
+                    .filter(genre -> genre != null && genre.getId() != null)
                     .collect(Collectors.toCollection(() ->
                             new TreeSet<>(Comparator.comparing(Genre::getId))));
 
@@ -202,5 +207,44 @@ public class FilmDbStorage implements FilmStorage {
                 jdbcTemplate.update(insertSql, film.getId(), genre.getId());
             }
         }
+    }
+
+    private void loadGenresForFilms(List<Film> films) {
+        List<Integer> filmIds = films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
+
+        if (filmIds.isEmpty()) {
+            return;
+        }
+        String inClause = String.join(",", Collections.nCopies(filmIds.size(), "?"));
+
+        String sql = String.format(
+                "SELECT fg.film_id, g.id, g.name " +
+                        "FROM film_genres fg " +
+                        "JOIN genres g ON fg.genre_id = g.id " +
+                        "WHERE fg.film_id IN (%s) " +
+                        "ORDER BY fg.film_id, g.id", inClause
+        );
+        // Выполняем запрос и маппим результаты
+        Map<Integer, List<Genre>> genresByFilmId = jdbcTemplate.query(
+                sql,
+                filmIds.toArray(),
+                rs -> {
+                    Map<Integer, List<Genre>> result = new HashMap<>();
+                    while (rs.next()) {
+                        Integer filmId = rs.getInt("film_id");
+                        Genre genre = new Genre(rs.getInt("id"), rs.getString("name"));
+                        result.computeIfAbsent(filmId, k -> new ArrayList<>()).add(genre);
+                    }
+                    return result;
+                }
+        );
+
+        // Устанавливаем жанры для каждого фильма
+        films.forEach(film -> {
+            List<Genre> genres = genresByFilmId.getOrDefault(film.getId(), new ArrayList<>());
+            film.setGenres(genres);
+        });
     }
 }

@@ -11,10 +11,9 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Date; // Явно импортируем java.sql.Date
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.sql.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Primary
@@ -25,14 +24,30 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> findAll() {
         String sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql, this::mapRowToUser);
+        List<User> users = jdbcTemplate.query(sql, this::mapRowToUser);
+
+        // Загружаем друзей для всех пользователей одним запросом
+        if (!users.isEmpty()) {
+            loadFriendsForUsers(users);
+        }
+
+        return users;
     }
 
     @Override
     public Optional<User> findById(Integer id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         List<User> results = jdbcTemplate.query(sql, this::mapRowToUser, id);
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+
+        User user = results.get(0);
+        // Загружаем друзей для конкретного пользователя
+        user.setFriends(getUserFriends(user.getId()));
+
+        return Optional.of(user);
     }
 
     @Override
@@ -46,7 +61,7 @@ public class UserDbStorage implements UserStorage {
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getLogin());
             stmt.setString(3, user.getName());
-            stmt.setDate(4, Date.valueOf(user.getBirthday())); // Используем java.sql.Date
+            stmt.setDate(4, Date.valueOf(user.getBirthday()));
             return stmt;
         }, keyHolder);
 
@@ -57,8 +72,12 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User update(User user) {
         String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(),
-                user.getBirthday(), user.getId());
+        jdbcTemplate.update(sql,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday(),
+                user.getId());
         return user;
     }
 
@@ -85,7 +104,15 @@ public class UserDbStorage implements UserStorage {
         String sql = "SELECT u.* FROM users u " +
                 "JOIN friends f ON u.id = f.friend_id " +
                 "WHERE f.user_id = ?";
-        return jdbcTemplate.query(sql, this::mapRowToUser, userId);
+
+        List<User> friends = jdbcTemplate.query(sql, this::mapRowToUser, userId);
+
+        // Загружаем друзей для каждого пользователя в списке
+        if (!friends.isEmpty()) {
+            loadFriendsForUsers(friends);
+        }
+
+        return friends;
     }
 
     @Override
@@ -94,7 +121,15 @@ public class UserDbStorage implements UserStorage {
                 "JOIN friends f1 ON u.id = f1.friend_id " +
                 "JOIN friends f2 ON u.id = f2.friend_id " +
                 "WHERE f1.user_id = ? AND f2.user_id = ?";
-        return jdbcTemplate.query(sql, this::mapRowToUser, userId, otherId);
+
+        List<User> commonFriends = jdbcTemplate.query(sql, this::mapRowToUser, userId, otherId);
+
+        // Загружаем друзей для каждого пользователя в списке
+        if (!commonFriends.isEmpty()) {
+            loadFriendsForUsers(commonFriends);
+        }
+
+        return commonFriends;
     }
 
     private User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {
@@ -105,14 +140,60 @@ public class UserDbStorage implements UserStorage {
         user.setName(rs.getString("name"));
         user.setBirthday(rs.getDate("birthday").toLocalDate());
 
-        // Загрузка друзей
-        user.setFriends(getUserFriends(user.getId()));
+        // Инициализируем пустой Set для друзей
+        user.setFriends(new HashSet<>());
 
         return user;
     }
 
-    private List<Integer> getUserFriends(Integer userId) {
+    /**
+     * Получает множество ID друзей пользователя
+     */
+    private Set<Integer> getUserFriends(Integer userId) {
         String sql = "SELECT friend_id FROM friends WHERE user_id = ?";
-        return jdbcTemplate.queryForList(sql, Integer.class, userId);
+        List<Integer> friendsList = jdbcTemplate.queryForList(sql, Integer.class, userId);
+        return new HashSet<>(friendsList);
+    }
+
+    /**
+     * Оптимизированная загрузка друзей для списка пользователей одним запросом
+     */
+    private void loadFriendsForUsers(List<User> users) {
+        List<Integer> userIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        // Создаем IN clause с нужным количеством параметров
+        String inClause = String.join(",", Collections.nCopies(userIds.size(), "?"));
+
+        String sql = String.format(
+                "SELECT user_id, friend_id FROM friends WHERE user_id IN (%s)",
+                inClause
+        );
+
+        // Выполняем запрос и маппим результаты
+        Map<Integer, Set<Integer>> friendsByUserId = jdbcTemplate.query(
+                sql,
+                userIds.toArray(),
+                rs -> {
+                    Map<Integer, Set<Integer>> result = new HashMap<>();
+                    while (rs.next()) {
+                        Integer userId = rs.getInt("user_id");
+                        Integer friendId = rs.getInt("friend_id");
+                        result.computeIfAbsent(userId, k -> new HashSet<>()).add(friendId);
+                    }
+                    return result;
+                }
+        );
+
+        // Устанавливаем друзей для каждого пользователя
+        users.forEach(user -> {
+            Set<Integer> friends = friendsByUserId.getOrDefault(user.getId(), new HashSet<>());
+            user.setFriends(friends);
+        });
     }
 }
