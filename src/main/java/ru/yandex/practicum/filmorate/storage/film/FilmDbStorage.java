@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 
 import java.sql.PreparedStatement;
@@ -24,35 +23,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final GenreStorage genreStorage;
 
     @Override
     public List<Film> findAll() {
         String sql = "SELECT f.*, m.name as mpa_name FROM films f JOIN mpa_ratings m ON f.mpa_id = m.id";
-        List<Film> films = jdbcTemplate.query(sql, this::mapRowToFilm);
-
-        // Загружаем жанры для каждого фильма
-        if (!films.isEmpty()) {
-            loadGenresForFilms(films);
-        }
-
-        return films;
+        return jdbcTemplate.query(sql, this::mapRowToFilm);
     }
 
     @Override
     public Optional<Film> findById(Integer id) {
         String sql = "SELECT f.*, m.name as mpa_name FROM films f JOIN mpa_ratings m ON f.mpa_id = m.id WHERE f.id = ?";
         List<Film> results = jdbcTemplate.query(sql, this::mapRowToFilm, id);
-
-        if (results.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Film film = results.get(0);
-        // Загружаем жанры для фильма
-        film.setGenres(genreStorage.getGenresByFilmId(film.getId()));
-
-        return Optional.of(film);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override
@@ -80,7 +62,6 @@ public class FilmDbStorage implements FilmStorage {
 
         // Загружаем полную информацию о MPA и жанрах
         film.setMpa(getMpaById(film.getMpa().getId()));
-        film.setGenres(genreStorage.getGenresByFilmId(film.getId()));
 
         return film;
     }
@@ -106,7 +87,6 @@ public class FilmDbStorage implements FilmStorage {
 
         // Загружаем полную информацию о MPA и жанрах
         film.setMpa(getMpaById(film.getMpa().getId()));
-        film.setGenres(genreStorage.getGenresByFilmId(film.getId()));
 
         return film;
     }
