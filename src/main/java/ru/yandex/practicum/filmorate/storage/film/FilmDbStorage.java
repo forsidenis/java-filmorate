@@ -60,7 +60,7 @@ public class FilmDbStorage implements FilmStorage {
             updateFilmGenres(film);
         }
 
-        // Загружаем полную информацию о MPA и жанрах
+        // Загружаем полную информацию о MPA
         film.setMpa(getMpaById(film.getMpa().getId()));
 
         return film;
@@ -85,7 +85,7 @@ public class FilmDbStorage implements FilmStorage {
         // Обновляем жанры
         updateFilmGenres(film);
 
-        // Загружаем полную информацию о MPA и жанрах
+        // Загружаем полную информацию о MPA
         film.setMpa(getMpaById(film.getMpa().getId()));
 
         return film;

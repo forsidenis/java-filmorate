@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.FilmController;
@@ -45,10 +46,19 @@ public class FilmService {
         validateMpa(film.getMpa());
         validateGenres(film.getGenres());
 
-        Film createdFilm = filmStorage.save(film);
-        // Загружаем жанры для созданного фильма
-        createdFilm.setGenres(genreStorage.getGenresByFilmId(createdFilm.getId()));
-        return createdFilm;
+        try {
+            Film createdFilm = filmStorage.save(film);
+            // Загружаем жанры для созданного фильма
+            createdFilm.setGenres(genreStorage.getGenresByFilmId(createdFilm.getId()));
+            return createdFilm;
+        } catch (DataIntegrityViolationException e) {
+            // Обрабатываем случай, когда жанр не существует в базе
+            if (e.getMessage().contains("GENRE") || e.getMessage().contains("genre") ||
+                    e.getMessage().contains("foreign key")) {
+                throw new NotFoundException("Один из указанных жанров не найден");
+            }
+            throw e;
+        }
     }
 
     public Film update(Film film) {
@@ -63,10 +73,19 @@ public class FilmService {
         validateMpa(film.getMpa());
         validateGenres(film.getGenres());
 
-        Film updatedFilm = filmStorage.update(film);
-        // Загружаем жанры для обновленного фильма
-        updatedFilm.setGenres(genreStorage.getGenresByFilmId(updatedFilm.getId()));
-        return updatedFilm;
+        try {
+            Film updatedFilm = filmStorage.update(film);
+            // Загружаем жанры для обновленного фильма
+            updatedFilm.setGenres(genreStorage.getGenresByFilmId(updatedFilm.getId()));
+            return updatedFilm;
+        } catch (DataIntegrityViolationException e) {
+            // Обрабатываем случай, когда жанр не существует в базе
+            if (e.getMessage().contains("GENRE") || e.getMessage().contains("genre") ||
+                    e.getMessage().contains("foreign key")) {
+                throw new NotFoundException("Один из указанных жанров не найден");
+            }
+            throw e;
+        }
     }
 
     public void addLike(Integer filmId, Integer userId) {
