@@ -1,7 +1,0 @@
-spring:
-  main:
-    log-startup-info: false
-    banner-mode: off
-logging:
-  level:
-    root: WARN

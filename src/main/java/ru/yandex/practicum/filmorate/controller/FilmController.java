@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import jakarta.validation.Valid;
@@ -57,6 +58,9 @@ public class FilmController {
     public List<Film> getPopularFilms(
             @RequestParam(defaultValue = "10") Integer count) {
         log.info("Получен запрос на получение {} популярных фильмов", count);
+        if (count <= 0) {
+            throw new ValidationException("Параметр count должен быть положительным числом");
+        }
         return filmService.findPopularFilms(count);
     }
 }
